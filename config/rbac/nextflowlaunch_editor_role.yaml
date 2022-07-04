@@ -1,0 +1,24 @@
+# permissions for end users to edit nextflowlaunches.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nextflowlaunch-editor-role
+rules:
+- apiGroups:
+  - batch.mnm.bio
+  resources:
+  - nextflowlaunches
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - batch.mnm.bio
+  resources:
+  - nextflowlaunches/status
+  verbs:
+  - get

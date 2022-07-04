@@ -1,0 +1,16 @@
+domain: mnm.bio
+layout:
+- go.kubebuilder.io/v3
+projectName: nextflowop
+repo: mnmdiagnostics/nextflowop
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: mnm.bio
+  group: batch
+  kind: NextflowLaunch
+  path: mnmdiagnostics/nextflowop/api/v1alpha1
+  version: v1alpha1
+version: "3"
