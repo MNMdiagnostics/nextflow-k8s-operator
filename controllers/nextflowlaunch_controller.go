@@ -85,7 +85,12 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch) corev1.Pod {
 	}
 	nextflowCommand := nfLaunch.Spec.Nextflow.Command
 	if len(nextflowCommand) == 0 {
-		nextflowCommand = []string{"nextflow", "run", nfLaunch.Spec.Pipeline}
+		nextflowCommand = []string{
+			"nextflow", "run",
+			"-c", "/tmp/nextflow.config",
+			"-w", "/workspace", // FIXME: hard-coded path
+			nfLaunch.Spec.Pipeline,
+		}
 	}
 	return corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -97,8 +102,58 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch) corev1.Pod {
 				Image:   nextflowImage + ":" + nextflowVersion,
 				Command: nextflowCommand,
 				Name:    nfLaunch.Name + "-" + generateHash(8),
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "nextflow-config",
+						MountPath: "/tmp/nextflow.config",
+						SubPath:   "nextflow.config",
+					},
+					{
+						Name:      "nextflow-volume",
+						MountPath: "/workspace", // FIXME: hard-coded path
+					},
+				},
 			}},
-			RestartPolicy: corev1.RestartPolicyNever, //FIXME??
+			Volumes: []corev1.Volume{
+				{
+					Name: "nextflow-config",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: nfLaunch.Name + "-nextflow-config",
+							},
+						},
+					},
+				},
+				{
+					Name: "nextflow-volume",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "rnasexi-pvc", // FIXME: hard-coded name
+						},
+					},
+				},
+			},
+			RestartPolicy: corev1.RestartPolicyNever,
+		},
+	}
+}
+
+// Construct a Nextflow config file as a ConfigMap
+func makeNextflowConfig(nfLaunch batchv1alpha1.NextflowLaunch) corev1.ConfigMap {
+	return corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      nfLaunch.Name + "-nextflow-config", // TODO: the name should probably be unique
+			Namespace: nfLaunch.Namespace,
+		},
+		Data: map[string]string{
+			"nextflow.config": `process {
+                  executor = 'k8s'
+               }
+               k8s {
+                  //serviceAccount = 'nextflow-sa'
+                  storageClaimName = 'rnasexi-pvc'
+               }`, // FIXME: hard-coded values
 		},
 	}
 }
@@ -147,8 +202,8 @@ func (r *NextflowLaunchReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		log.Info("Job finished.")
 		pod, err := getChildPod(r, ctx, nfLaunch)
 		if err == nil {
-			//TODO: should the pod be deleted on success??
-			//TODO: (everything sent to stdout/stderr will be lost)
+			// TODO: should the pod be deleted on success??
+			// TODO: (everything sent to stdout/stderr will be lost)
 			err = r.Delete(ctx, &pod)
 			if err != nil {
 				log.Info("Couldn't remove pod " + pod.Name)
@@ -164,6 +219,12 @@ func (r *NextflowLaunchReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	} else {
 		// job is ready to run
+		configMap := makeNextflowConfig(nfLaunch)
+		err = r.Client.Create(ctx, &configMap)
+		if err != nil {
+			log.Error(err, "error creating Nextflow config")
+			return ctrl.Result{}, err
+		}
 		pod := makeNextflowPod(nfLaunch)
 		log.Info("Starting job " + pod.Name)
 		err = r.Client.Create(ctx, &pod)
@@ -171,7 +232,7 @@ func (r *NextflowLaunchReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			log.Error(err, "error creating pod")
 			return ctrl.Result{}, err
 		}
-		//TODO: how to get the child pod auto-removed after the launch is deleted?
+		// TODO: how to get the child pod auto-removed after the launch is deleted?
 		ctrl.SetControllerReference(&nfLaunch, &pod, r.Scheme)
 		// somewhat clumsy way to establish a parent-child relationship
 		nfLaunch.Status.MainPod, _ = reference.GetReference(r.Scheme, &pod)
