@@ -73,7 +73,7 @@ func getChildPod(r *NextflowLaunchReconciler, ctx context.Context, nfLaunch batc
 }
 
 // Construct a Pod object for Nextflow
-func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch) corev1.Pod {
+func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string) corev1.Pod {
 
 	nextflowImage := nfLaunch.Spec.Nextflow.Image
 	if nextflowImage == "" {
@@ -120,7 +120,7 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch) corev1.Pod {
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: nfLaunch.Name + "-nextflow-config",
+								Name: configMapName,
 							},
 						},
 					},
@@ -139,11 +139,23 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch) corev1.Pod {
 	}
 }
 
+// Retrieve the NextflowLaunch object's config map
+func getConfigMap(r *NextflowLaunchReconciler, ctx context.Context, nfLaunch batchv1alpha1.NextflowLaunch) (corev1.ConfigMap, error) {
+
+	var configMap corev1.ConfigMap
+	mapName := types.NamespacedName{
+		Namespace: nfLaunch.Status.ConfigMap.Namespace,
+		Name:      nfLaunch.Status.ConfigMap.Name,
+	}
+	err := r.Get(ctx, mapName, &configMap)
+	return configMap, err
+}
+
 // Construct a Nextflow config file as a ConfigMap
 func makeNextflowConfig(nfLaunch batchv1alpha1.NextflowLaunch) corev1.ConfigMap {
 	return corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      nfLaunch.Name + "-nextflow-config", // TODO: the name should probably be unique
+			Name:      nfLaunch.Name + "-nextflow-config-" + generateHash(8),
 			Namespace: nfLaunch.Namespace,
 		},
 		Data: map[string]string{
@@ -200,16 +212,25 @@ func (r *NextflowLaunchReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	} else if stage == "Succeeded" {
 		// job has finished successfully
 		log.Info("Job finished.")
+		// remove child pod
+		// TODO: should the pod be deleted on success??
+		// TODO: (everything sent to stdout/stderr will be lost)
 		pod, err := getChildPod(r, ctx, nfLaunch)
 		if err == nil {
-			// TODO: should the pod be deleted on success??
-			// TODO: (everything sent to stdout/stderr will be lost)
 			err = r.Delete(ctx, &pod)
 			if err != nil {
 				log.Info("Couldn't remove pod " + pod.Name)
 			}
+			nfLaunch.Status.MainPod = &corev1.ObjectReference{}
 			log.Info("Successfully removed pod " + pod.Name)
 		}
+		// remove config map
+		configMap, err := getConfigMap(r, ctx, nfLaunch)
+		if err == nil {
+			r.Delete(ctx, &configMap)
+		}
+		nfLaunch.Status.ConfigMap = &corev1.ObjectReference{}
+		r.Status().Update(ctx, &nfLaunch)
 
 	} else if stage == "Failed" {
 		// job has failed
@@ -225,17 +246,18 @@ func (r *NextflowLaunchReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			log.Error(err, "error creating Nextflow config")
 			return ctrl.Result{}, err
 		}
-		pod := makeNextflowPod(nfLaunch)
+		nfLaunch.Status.ConfigMap, _ = reference.GetReference(r.Scheme, &configMap)
+		pod := makeNextflowPod(nfLaunch, configMap.Name)
 		log.Info("Starting job " + pod.Name)
 		err = r.Client.Create(ctx, &pod)
 		if err != nil {
 			log.Error(err, "error creating pod")
 			return ctrl.Result{}, err
 		}
+		nfLaunch.Status.MainPod, _ = reference.GetReference(r.Scheme, &pod)
 		// TODO: how to get the child pod auto-removed after the launch is deleted?
 		ctrl.SetControllerReference(&nfLaunch, &pod, r.Scheme)
-		// somewhat clumsy way to establish a parent-child relationship
-		nfLaunch.Status.MainPod, _ = reference.GetReference(r.Scheme, &pod)
+		ctrl.SetControllerReference(&nfLaunch, &configMap, r.Scheme)
 		nfLaunch.Status.Stage = "Running"
 		r.Status().Update(ctx, &nfLaunch)
 	}
