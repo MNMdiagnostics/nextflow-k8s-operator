@@ -17,8 +17,11 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
+	goerrors "errors"
 	"math/rand"
+	"text/template"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -42,6 +45,10 @@ type NextflowLaunchReconciler struct {
 const (
 	defaultNextflowImage   = "nextflow/nextflow"
 	defaultNextflowVersion = "22.06.0-edge"
+
+	statusRunning   = "Running"
+	statusSucceeded = "Succeeded"
+	statusFailed    = "Failed"
 )
 
 //+kubebuilder:rbac:groups=batch.mnm.bio,resources=nextflowlaunches,verbs=get;list;watch;create;update;patch;delete
@@ -58,18 +65,6 @@ func generateHash(n int) string {
 		s[i] = pool[rand.Intn(len(pool))]
 	}
 	return string(s)
-}
-
-// Retrieve the NextflowLaunch object's child pod
-func getChildPod(r *NextflowLaunchReconciler, ctx context.Context, nfLaunch batchv1alpha1.NextflowLaunch) (corev1.Pod, error) {
-
-	var pod corev1.Pod
-	podName := types.NamespacedName{
-		Namespace: nfLaunch.Status.MainPod.Namespace,
-		Name:      nfLaunch.Status.MainPod.Name,
-	}
-	err := r.Get(ctx, podName, &pod)
-	return pod, err
 }
 
 // Construct a Pod object for Nextflow
@@ -129,7 +124,7 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 					Name: "nextflow-volume",
 					VolumeSource: corev1.VolumeSource{
 						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: "rnasexi-pvc", // FIXME: hard-coded name
+							ClaimName: nfLaunch.Spec.K8s.StorageClaimName,
 						},
 					},
 				},
@@ -139,35 +134,46 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 	}
 }
 
-// Retrieve the NextflowLaunch object's config map
-func getConfigMap(r *NextflowLaunchReconciler, ctx context.Context, nfLaunch batchv1alpha1.NextflowLaunch) (corev1.ConfigMap, error) {
-
-	var configMap corev1.ConfigMap
-	mapName := types.NamespacedName{
-		Namespace: nfLaunch.Status.ConfigMap.Namespace,
-		Name:      nfLaunch.Status.ConfigMap.Name,
-	}
-	err := r.Get(ctx, mapName, &configMap)
-	return configMap, err
-}
-
 // Construct a Nextflow config file as a ConfigMap
 func makeNextflowConfig(nfLaunch batchv1alpha1.NextflowLaunch) corev1.ConfigMap {
+
+	configTemplate, _ := template.New("config").Parse(
+		`process {
+		    executor = 'k8s'
+		 }
+		 k8s {
+		    //serviceAccount = 'nextflow-sa'
+		    storageClaimName = '{{ .StorageClaimName }}'
+		 }`)
+
+	type Options struct {
+		StorageClaimName string
+	}
+	values := Options{
+		StorageClaimName: nfLaunch.Spec.K8s.StorageClaimName,
+	}
+	var config bytes.Buffer
+	configTemplate.Execute(&config, values)
+
 	return corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nfLaunch.Name + "-nextflow-config-" + generateHash(8),
 			Namespace: nfLaunch.Namespace,
 		},
 		Data: map[string]string{
-			"nextflow.config": `process {
-                  executor = 'k8s'
-               }
-               k8s {
-                  //serviceAccount = 'nextflow-sa'
-                  storageClaimName = 'rnasexi-pvc'
-               }`, // FIXME: hard-coded values
+			"nextflow.config": config.String(),
 		},
 	}
+}
+
+// Validate launch definition, return an error or nil
+func validateLaunch(nfLaunch batchv1alpha1.NextflowLaunch) error {
+	spec := nfLaunch.Spec
+
+	if spec.K8s.StorageClaimName == "" {
+		return goerrors.New("spec.k8s.storageClaimName is required")
+	}
+	return nil
 }
 
 // Reconciler function for NextflowLaunch
@@ -182,83 +188,77 @@ func (r *NextflowLaunchReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			log.Info("Nextflow launch " + req.Name + " deleted")
 			return ctrl.Result{}, nil
 		}
-		log.Error(err, "error fetching Nextflow launch "+req.Name)
+		log.Error(err, "Error fetching Nextflow launch "+req.Name)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	err = validateLaunch(nfLaunch)
+	if err != nil {
+		log.Error(err, "Incorrect launch definition (yaml file)")
+		return ctrl.Result{}, nil
 	}
 
 	stage := nfLaunch.Status.Stage
 
-	if stage == "Running" {
-		// job is running, check status
-		log.Info("Job running")
-		pod, err := getChildPod(r, ctx, nfLaunch)
+	if stage == statusRunning {
+		// job is running, retrieve child pod to check status
+		var pod corev1.Pod
+		podName := types.NamespacedName{
+			Namespace: nfLaunch.Status.MainPod.Namespace,
+			Name:      nfLaunch.Status.MainPod.Name,
+		}
+		err = r.Get(ctx, podName, &pod)
 		if err != nil {
-			log.Error(err, "error fetching pod")
+			log.Error(err, "Error fetching pod")
 			return ctrl.Result{}, err
 		}
 		status := pod.Status.Phase
-		log.Info(string(status))
+		log.Info("Job running (" + string(status) + ")")
+
 		if status == corev1.PodSucceeded {
-			nfLaunch.Status.Stage = "Succeeded"
+			nfLaunch.Status.Stage = statusSucceeded
 			r.Status().Update(ctx, &nfLaunch)
+
 		} else if status == corev1.PodFailed {
-			nfLaunch.Status.Stage = "Failed"
+			nfLaunch.Status.Stage = statusFailed
 			r.Status().Update(ctx, &nfLaunch)
+
 		} else {
 			// come revisit later
 			return ctrl.Result{RequeueAfter: 3e+9}, nil
 		}
 
-	} else if stage == "Succeeded" {
+	} else if stage == statusSucceeded {
 		// job has finished successfully
 		log.Info("Job finished.")
-		// remove child pod
-		// TODO: should the pod be deleted on success??
-		// TODO: (everything sent to stdout/stderr will be lost)
-		pod, err := getChildPod(r, ctx, nfLaunch)
-		if err == nil {
-			err = r.Delete(ctx, &pod)
-			if err != nil {
-				log.Info("Couldn't remove pod " + pod.Name)
-			}
-			nfLaunch.Status.MainPod = &corev1.ObjectReference{}
-			log.Info("Successfully removed pod " + pod.Name)
-		}
-		// remove config map
-		configMap, err := getConfigMap(r, ctx, nfLaunch)
-		if err == nil {
-			r.Delete(ctx, &configMap)
-		}
-		nfLaunch.Status.ConfigMap = &corev1.ObjectReference{}
-		r.Status().Update(ctx, &nfLaunch)
 
-	} else if stage == "Failed" {
+	} else if stage == statusFailed {
 		// job has failed
-		log.Info("Job failed! Use `kubectl describe pod " +
-			nfLaunch.Status.MainPod.Name +
+		log.Info("Job failed! Use `kubectl logs " + nfLaunch.Status.MainPod.Name +
 			"` to diagnose")
 
 	} else {
-		// job is ready to run
+		// job is ready to run, create children
 		configMap := makeNextflowConfig(nfLaunch)
+		ctrl.SetControllerReference(&nfLaunch, &configMap, r.Scheme)
 		err = r.Client.Create(ctx, &configMap)
 		if err != nil {
-			log.Error(err, "error creating Nextflow config")
+			log.Error(err, "Error creating Nextflow config")
 			return ctrl.Result{}, err
 		}
 		nfLaunch.Status.ConfigMap, _ = reference.GetReference(r.Scheme, &configMap)
+
 		pod := makeNextflowPod(nfLaunch, configMap.Name)
-		log.Info("Starting job " + pod.Name)
+		ctrl.SetControllerReference(&nfLaunch, &pod, r.Scheme)
+		log.Info("Starting pod " + pod.Name)
 		err = r.Client.Create(ctx, &pod)
 		if err != nil {
-			log.Error(err, "error creating pod")
+			log.Error(err, "Error creating pod")
 			return ctrl.Result{}, err
 		}
 		nfLaunch.Status.MainPod, _ = reference.GetReference(r.Scheme, &pod)
-		// TODO: how to get the child pod auto-removed after the launch is deleted?
-		ctrl.SetControllerReference(&nfLaunch, &pod, r.Scheme)
-		ctrl.SetControllerReference(&nfLaunch, &configMap, r.Scheme)
-		nfLaunch.Status.Stage = "Running"
+
+		nfLaunch.Status.Stage = statusRunning
 		r.Status().Update(ctx, &nfLaunch)
 	}
 	return ctrl.Result{}, nil

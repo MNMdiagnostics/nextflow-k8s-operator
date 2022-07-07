@@ -35,7 +35,14 @@ spec:
           spec:
             description: NextflowLaunchSpec defines the desired state of NextflowLaunch
             properties:
+              k8s:
+                description: '`k8s` scope of the Nextflow config'
+                properties:
+                  storageClaimName:
+                    type: string
+                type: object
               nextflow:
+                description: Nextflow-specific configuration
                 properties:
                   command:
                     items:

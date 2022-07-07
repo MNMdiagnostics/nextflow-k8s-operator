@@ -21,16 +21,23 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Nextflow-specific configuration
 type NextflowLaunchNextflow struct {
 	Image   string   `json:"image,omitempty"`
 	Version string   `json:"version,omitempty"`
 	Command []string `json:"command,omitempty"`
 }
 
+// `k8s` scope of the Nextflow config
+type NextflowLaunchK8s struct {
+	StorageClaimName string `json:"storageClaimName,omitempty"`
+}
+
 // NextflowLaunchSpec defines the desired state of NextflowLaunch
 type NextflowLaunchSpec struct {
 	Pipeline string                 `json:"pipeline,omitempty"`
 	Nextflow NextflowLaunchNextflow `json:"nextflow,omitempty"`
+	K8s      NextflowLaunchK8s      `json:"k8s,omitempty"`
 }
 
 // NextflowLaunchStatus defines the observed state of NextflowLaunch
