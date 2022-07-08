@@ -87,7 +87,7 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 			nfLaunch.Spec.Pipeline,
 		}
 	}
-	return corev1.Pod{
+	pod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nfLaunch.Name + "-" + generateHash(8),
 			Namespace: nfLaunch.Namespace,
@@ -132,6 +132,31 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 			RestartPolicy: corev1.RestartPolicyNever,
 		},
 	}
+
+	// optionally attach a secret volume with scm data in it
+	if nfLaunch.Spec.Nextflow.ScmSecretName != "" {
+		pod.Spec.Containers[0].VolumeMounts = append(
+			pod.Spec.Containers[0].VolumeMounts,
+			corev1.VolumeMount{
+				Name:      "nextflow-scm",
+				MountPath: "/.nextflow",
+				ReadOnly:  true,
+			},
+		)
+		pod.Spec.Volumes = append(
+			pod.Spec.Volumes,
+			corev1.Volume{
+				Name: "nextflow-scm",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: nfLaunch.Spec.Nextflow.ScmSecretName,
+					},
+				},
+			},
+		)
+	}
+
+	return pod
 }
 
 // Construct a Nextflow config file as a ConfigMap

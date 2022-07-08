@@ -50,6 +50,8 @@ spec:
                     type: array
                   image:
                     type: string
+                  scmSecretName:
+                    type: string
                   version:
                     type: string
                 type: object

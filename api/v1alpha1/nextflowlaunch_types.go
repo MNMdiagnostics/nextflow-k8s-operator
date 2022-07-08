@@ -23,9 +23,10 @@ import (
 
 // Nextflow-specific configuration
 type NextflowLaunchNextflow struct {
-	Image   string   `json:"image,omitempty"`
-	Version string   `json:"version,omitempty"`
-	Command []string `json:"command,omitempty"`
+	Image         string   `json:"image,omitempty"`
+	Version       string   `json:"version,omitempty"`
+	Command       []string `json:"command,omitempty"`
+	ScmSecretName string   `json:"scmSecretName,omitempty"`
 }
 
 // `k8s` scope of the Nextflow config
