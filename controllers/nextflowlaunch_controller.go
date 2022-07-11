@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	batchv1alpha1 "mnmdiagnostics/nextflowop/api/v1alpha1"
+	batchv1alpha1 "mnmdiagnostics/nextflow-k8s-operator/api/v1alpha1"
 )
 
 // NextflowLaunchReconciler reconciles a NextflowLaunch object
@@ -124,7 +124,7 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 					Name: "nextflow-volume",
 					VolumeSource: corev1.VolumeSource{
 						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: nfLaunch.Spec.K8s.StorageClaimName,
+							ClaimName: nfLaunch.Spec.K8s["storageClaimName"],
 						},
 					},
 				},
@@ -139,8 +139,8 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 			pod.Spec.Containers[0].VolumeMounts,
 			corev1.VolumeMount{
 				Name:      "nextflow-scm",
-				MountPath: "/.nextflow",
-				ReadOnly:  true,
+				MountPath: "/.nextflow/scm",
+				SubPath:   "scm",
 			},
 		)
 		pod.Spec.Volumes = append(
@@ -162,20 +162,46 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 // Construct a Nextflow config file as a ConfigMap
 func makeNextflowConfig(nfLaunch batchv1alpha1.NextflowLaunch) corev1.ConfigMap {
 
-	configTemplate, _ := template.New("config").Parse(
-		`process {
-		    executor = 'k8s'
-		 }
-		 k8s {
-		    //serviceAccount = 'nextflow-sa'
-		    storageClaimName = '{{ .StorageClaimName }}'
-		 }`)
+	configTemplate, _ := template.New("config").Parse(`
+        process {
+           executor = 'k8s'
+           pod = [
+           {{- range $opt := .Pod -}}
+           [
+           {{- range $key, $value := $opt -}}
+           {{ js $key }}: '{{ js $value }}',
+           {{- end -}}
+           ],
+           {{- end -}}
+           ]
+        }
+        k8s {
+           {{- range $par, $value := .K8s }}
+           {{ $par }} = '{{ js $value }}'
+           {{- end }}
+        }
+        params {
+           {{- range $par, $value := .Params }}
+           {{ $par }} = '{{ js $value }}'
+           {{- end }}
+        }
+        env {
+           {{- range $par, $value := .Env }}
+           {{ $par }} = '{{ js $value }}'
+           {{- end }}
+        }`)
 
 	type Options struct {
-		StorageClaimName string
+		K8s    map[string]string
+		Params map[string]string
+		Env    map[string]string
+		Pod    []map[string]string
 	}
 	values := Options{
-		StorageClaimName: nfLaunch.Spec.K8s.StorageClaimName,
+		K8s:    nfLaunch.Spec.K8s,
+		Params: nfLaunch.Spec.Params,
+		Env:    nfLaunch.Spec.Env,
+		Pod:    nfLaunch.Spec.Pod,
 	}
 	var config bytes.Buffer
 	configTemplate.Execute(&config, values)
@@ -195,7 +221,8 @@ func makeNextflowConfig(nfLaunch batchv1alpha1.NextflowLaunch) corev1.ConfigMap 
 func validateLaunch(nfLaunch batchv1alpha1.NextflowLaunch) error {
 	spec := nfLaunch.Spec
 
-	if spec.K8s.StorageClaimName == "" {
+	value, hasKey := spec.K8s["storageClaimName"]
+	if !hasKey || value == "" {
 		return goerrors.New("spec.k8s.storageClaimName is required")
 	}
 	return nil

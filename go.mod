@@ -1,4 +1,4 @@
-module mnmdiagnostics/nextflowop
+module mnmdiagnostics/nextflow-k8s-operator
 
 go 1.17
 

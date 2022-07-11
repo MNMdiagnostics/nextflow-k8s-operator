@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	batchv1alpha1 "mnmdiagnostics/nextflowop/api/v1alpha1"
-	"mnmdiagnostics/nextflowop/controllers"
+	batchv1alpha1 "mnmdiagnostics/nextflow-k8s-operator/api/v1alpha1"
+	"mnmdiagnostics/nextflow-k8s-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
