@@ -33,6 +33,7 @@ type NextflowLaunchNextflow struct {
 type NextflowLaunchSpec struct {
 	Pipeline string                 `json:"pipeline,omitempty"`
 	Nextflow NextflowLaunchNextflow `json:"nextflow,omitempty"`
+	Profile  string                 `json:"profile,omitempty"`
 	K8s      map[string]string      `json:"k8s,omitempty"`
 	Pod      []map[string]string    `json:"pod,omitempty"`
 	Params   map[string]string      `json:"params,omitempty"`

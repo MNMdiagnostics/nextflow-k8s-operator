@@ -69,6 +69,8 @@ spec:
                     type: string
                   type: object
                 type: array
+              profile:
+                type: string
             type: object
           status:
             description: NextflowLaunchStatus defines the observed state of NextflowLaunch
