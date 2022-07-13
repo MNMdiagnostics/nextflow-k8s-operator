@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	batchv1alpha1 "mnmdiagnostics/nextflowop/api/v1alpha1"
+	batchv1alpha1 "mnmdiagnostics/nextflow-k8s-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 

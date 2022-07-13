@@ -1,8 +1,8 @@
 domain: mnm.bio
 layout:
 - go.kubebuilder.io/v3
-projectName: nextflowop
-repo: mnmdiagnostics/nextflowop
+projectName: nextflow-k8s-operator
+repo: mnmdiagnostics/nextflow-k8s-operator
 resources:
 - api:
     crdVersion: v1
@@ -11,6 +11,6 @@ resources:
   domain: mnm.bio
   group: batch
   kind: NextflowLaunch
-  path: mnmdiagnostics/nextflowop/api/v1alpha1
+  path: mnmdiagnostics/nextflow-k8s-operator/api/v1alpha1
   version: v1alpha1
 version: "3"

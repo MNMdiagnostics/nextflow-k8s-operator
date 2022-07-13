@@ -29,16 +29,15 @@ type NextflowLaunchNextflow struct {
 	ScmSecretName string   `json:"scmSecretName,omitempty"`
 }
 
-// `k8s` scope of the Nextflow config
-type NextflowLaunchK8s struct {
-	StorageClaimName string `json:"storageClaimName,omitempty"`
-}
-
 // NextflowLaunchSpec defines the desired state of NextflowLaunch
 type NextflowLaunchSpec struct {
 	Pipeline string                 `json:"pipeline,omitempty"`
 	Nextflow NextflowLaunchNextflow `json:"nextflow,omitempty"`
-	K8s      NextflowLaunchK8s      `json:"k8s,omitempty"`
+	Profile  string                 `json:"profile,omitempty"`
+	K8s      map[string]string      `json:"k8s,omitempty"`
+	Pod      []map[string]string    `json:"pod,omitempty"`
+	Params   map[string]string      `json:"params,omitempty"`
+	Env      map[string]string      `json:"env,omitempty"`
 }
 
 // NextflowLaunchStatus defines the observed state of NextflowLaunch
