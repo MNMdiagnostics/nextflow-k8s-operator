@@ -133,6 +133,7 @@ func makeNextflowConfig(nfLaunch batchv1alpha1.NextflowLaunch) corev1.ConfigMap 
 		Parse(`
     		process {
     		   executor = 'k8s'
+    		   {{ if .Pod -}}
     		   pod = [
     		   {{ range $opt := .Pod -}}
     		   [
@@ -140,22 +141,29 @@ func makeNextflowConfig(nfLaunch batchv1alpha1.NextflowLaunch) corev1.ConfigMap 
     		   ],
     		   {{ end }}
     		   ]
+    		   {{- end }}
     		}
+    		{{ if .K8s -}}
     		k8s {
     		   {{- range $par, $value := .K8s }}
     		   {{ escape $par }} = '{{ escape $value }}'
     		   {{- end }}
     		}
+    		{{- end }}
+    		{{ if .Params -}}
     		params {
     		   {{- range $par, $value := .Params }}
     		   {{ escape $par }} = '{{ escape $value }}'
     		   {{- end }}
     		}
+    		{{- end }}
+    		{{ if .Env -}}
     		env {
     		   {{- range $par, $value := .Env }}
     		   {{ escape $par }} = '{{ escape $value }}'
     		   {{- end }}
-    		}`)
+    		}
+    		{{- end }}`)
 
 	type Options struct {
 		K8s    map[string]string
