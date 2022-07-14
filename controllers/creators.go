@@ -88,6 +88,7 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 				},
 			},
 			RestartPolicy: corev1.RestartPolicyNever,
+			Tolerations:   spec.Driver.Tolerations,
 		},
 	}
 
@@ -181,8 +182,8 @@ func validateLaunch(nfLaunch batchv1alpha1.NextflowLaunch) (batchv1alpha1.Nextfl
 	spec := nfLaunch.Spec
 
 	// validation
-	if spec.Pipeline == "" {
-		return nfLaunch, errors.New("spec.Pipeline is required")
+	if spec.Pipeline.Source == "" {
+		return nfLaunch, errors.New("spec.pipeline.source is required")
 	}
 	if keyIsEmpty(spec.K8s, "storageClaimName") {
 		return nfLaunch, errors.New("spec.k8s.storageClaimName is required")
@@ -208,13 +209,19 @@ func validateLaunch(nfLaunch batchv1alpha1.NextflowLaunch) (batchv1alpha1.Nextfl
 	if spec.Profile != "" {
 		profileArg = "-profile " + strconv.QuoteToASCII(spec.Profile)
 	}
+	revisionArg := ""
+	if spec.Pipeline.Revision != "" {
+		revisionArg = "-r " + strconv.QuoteToASCII(spec.Pipeline.Revision)
+	}
+
 	if len(spec.Nextflow.Command) == 0 {
 		spec.Nextflow.Command = []string{
 			"nextflow", "run",
 			"-c", configPath,
 			"-w", strconv.QuoteToASCII(spec.K8s["workDir"]),
 			profileArg,
-			strconv.QuoteToASCII(spec.Pipeline),
+			revisionArg,
+			strconv.QuoteToASCII(spec.Pipeline.Source),
 		}
 	}
 	nfLaunch.Spec = spec

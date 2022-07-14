@@ -29,10 +29,22 @@ type NextflowLaunchNextflow struct {
 	ScmSecretName string   `json:"scmSecretName,omitempty"`
 }
 
+// Pipeline data
+type NextflowLaunchPipeline struct {
+	Source   string `json:"source,omitempty"`
+	Revision string `json:"revision,omitempty"`
+}
+
+// Main pod ("driver") configuration
+type NextflowLaunchDriver struct {
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+}
+
 // NextflowLaunchSpec defines the desired state of NextflowLaunch
 type NextflowLaunchSpec struct {
-	Pipeline string                 `json:"pipeline,omitempty"`
+	Pipeline NextflowLaunchPipeline `json:"pipeline,omitempty"`
 	Nextflow NextflowLaunchNextflow `json:"nextflow,omitempty"`
+	Driver   NextflowLaunchDriver   `json:"driver,omitempty"`
 	Profile  string                 `json:"profile,omitempty"`
 	K8s      map[string]string      `json:"k8s,omitempty"`
 	Pod      []map[string]string    `json:"pod,omitempty"`
