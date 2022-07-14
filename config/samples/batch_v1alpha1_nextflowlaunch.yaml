@@ -1,6 +1,0 @@
-apiVersion: batch.mnm.bio/v1alpha1
-kind: NextflowLaunch
-metadata:
-  name: nextflowlaunch-sample
-spec:
-  # TODO(user): Add fields here
