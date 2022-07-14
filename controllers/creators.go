@@ -19,7 +19,6 @@ package controllers
 import (
 	"bytes"
 	"errors"
-	"strconv"
 	"text/template"
 
 	corev1 "k8s.io/api/core/v1"
@@ -127,7 +126,10 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 func makeNextflowConfig(nfLaunch batchv1alpha1.NextflowLaunch) corev1.ConfigMap {
 
 	configTemplate, _ := template.New("config").
-		Funcs(template.FuncMap{"stringsOrMap": stringsOrMap}).
+		Funcs(template.FuncMap{
+			"stringsOrMap": stringsOrMap,
+			"escape":       escape,
+		}).
 		Parse(`
     		process {
     		   executor = 'k8s'
@@ -141,17 +143,17 @@ func makeNextflowConfig(nfLaunch batchv1alpha1.NextflowLaunch) corev1.ConfigMap 
     		}
     		k8s {
     		   {{- range $par, $value := .K8s }}
-    		   {{ $par }} = '{{ js $value }}'
+    		   {{ escape $par }} = '{{ escape $value }}'
     		   {{- end }}
     		}
     		params {
     		   {{- range $par, $value := .Params }}
-    		   {{ $par }} = '{{ js $value }}'
+    		   {{ escape $par }} = '{{ escape $value }}'
     		   {{- end }}
     		}
     		env {
     		   {{- range $par, $value := .Env }}
-    		   {{ $par }} = '{{ js $value }}'
+    		   {{ escape $par }} = '{{ escape $value }}'
     		   {{- end }}
     		}`)
 
@@ -212,21 +214,21 @@ func validateLaunch(nfLaunch batchv1alpha1.NextflowLaunch) (batchv1alpha1.Nextfl
 	}
 	profileArg := ""
 	if spec.Profile != "" {
-		profileArg = "-profile " + strconv.QuoteToASCII(spec.Profile)
+		profileArg = "-profile " + escape(spec.Profile)
 	}
 	revisionArg := ""
 	if spec.Pipeline.Revision != "" {
-		revisionArg = "-r " + strconv.QuoteToASCII(spec.Pipeline.Revision)
+		revisionArg = "-r " + escape(spec.Pipeline.Revision)
 	}
 
 	if len(spec.Nextflow.Command) == 0 {
 		spec.Nextflow.Command = []string{
 			"nextflow", "run",
 			"-c", configPath,
-			"-w", strconv.QuoteToASCII(spec.K8s["workDir"]),
+			"-w", escape(spec.K8s["workDir"]),
 			profileArg,
 			revisionArg,
-			strconv.QuoteToASCII(spec.Pipeline.Source),
+			escape(spec.Pipeline.Source),
 		}
 	}
 	nfLaunch.Spec = spec
