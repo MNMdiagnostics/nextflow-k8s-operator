@@ -17,7 +17,9 @@ limitations under the License.
 package controllers
 
 import (
+	"fmt"
 	"math/rand"
+	"strconv"
 )
 
 // Generate a hexadecimal hash of the specified length

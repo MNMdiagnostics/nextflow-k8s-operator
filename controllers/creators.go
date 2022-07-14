@@ -92,8 +92,13 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 		},
 	}
 
+	// add environment variables for the driver pod, if there are any
+	if len(spec.Driver.Env) > 0 {
+		pod.Spec.Containers[0].Env = spec.Driver.Env
+	}
+
 	// optionally attach a secret volume with scm data in it
-	if nfLaunch.Spec.Nextflow.ScmSecretName != "" {
+	if spec.Nextflow.ScmSecretName != "" {
 		pod.Spec.Containers[0].VolumeMounts = append(
 			pod.Spec.Containers[0].VolumeMounts,
 			corev1.VolumeMount{

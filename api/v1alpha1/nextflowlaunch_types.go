@@ -38,6 +38,7 @@ type NextflowLaunchPipeline struct {
 // Main pod ("driver") configuration
 type NextflowLaunchDriver struct {
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	Env         []corev1.EnvVar     `json:"env,omitempty"`
 }
 
 // NextflowLaunchSpec defines the desired state of NextflowLaunch
