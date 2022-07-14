@@ -121,34 +121,34 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 // Construct a Nextflow config file as a ConfigMap
 func makeNextflowConfig(nfLaunch batchv1alpha1.NextflowLaunch) corev1.ConfigMap {
 
-	configTemplate, _ := template.New("config").Parse(`
-        process {
-           executor = 'k8s'
-           pod = [
-           {{- range $opt := .Pod -}}
-           [
-           {{- range $key, $value := $opt -}}
-           {{ js $key }}: '{{ js $value }}',
-           {{- end -}}
-           ],
-           {{- end -}}
-           ]
-        }
-        k8s {
-           {{- range $par, $value := .K8s }}
-           {{ $par }} = '{{ js $value }}'
-           {{- end }}
-        }
-        params {
-           {{- range $par, $value := .Params }}
-           {{ $par }} = '{{ js $value }}'
-           {{- end }}
-        }
-        env {
-           {{- range $par, $value := .Env }}
-           {{ $par }} = '{{ js $value }}'
-           {{- end }}
-        }`)
+	configTemplate, _ := template.New("config").
+		Funcs(template.FuncMap{"stringsOrMap": stringsOrMap}).
+		Parse(`
+    		process {
+    		   executor = 'k8s'
+    		   pod = [
+    		   {{ range $opt := .Pod -}}
+    		   [
+    		   {{- stringsOrMap $opt -}}
+    		   ],
+    		   {{ end }}
+    		   ]
+    		}
+    		k8s {
+    		   {{- range $par, $value := .K8s }}
+    		   {{ $par }} = '{{ js $value }}'
+    		   {{- end }}
+    		}
+    		params {
+    		   {{- range $par, $value := .Params }}
+    		   {{ $par }} = '{{ js $value }}'
+    		   {{- end }}
+    		}
+    		env {
+    		   {{- range $par, $value := .Env }}
+    		   {{ $par }} = '{{ js $value }}'
+    		   {{- end }}
+    		}`)
 
 	type Options struct {
 		K8s    map[string]string

@@ -38,3 +38,23 @@ func keyIsEmpty(x map[string]string, key string) bool {
 	}
 	return false
 }
+
+// Parse a map of strings.
+// If one of the values equals to "(map)", return a Groovy-formatted
+// named map: "key: [key1: "value1", key2: "value2", ...]".
+// Otherwise return a comma-separated list of key-value pairs
+func stringsOrMap(x map[string]string) string {
+	key := ""
+	out := ""
+	for k, v := range x {
+		if v == "(map)" {
+			key = k
+		} else {
+			out = out + fmt.Sprintf("%s: %s, ", k, strconv.Quote(v))
+		}
+	}
+	if key != "" {
+		out = fmt.Sprintf("%s: [%s], ", key, out)
+	}
+	return (out)
+}
