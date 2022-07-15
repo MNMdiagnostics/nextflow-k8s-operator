@@ -17,7 +17,9 @@ limitations under the License.
 package controllers
 
 import (
+	"fmt"
 	"math/rand"
+	"strings"
 )
 
 // Generate a hexadecimal hash of the specified length
@@ -37,4 +39,31 @@ func keyIsEmpty(x map[string]string, key string) bool {
 		return true
 	}
 	return false
+}
+
+// Escape "unsafe" characters in a string
+func escape(s string) string {
+	s = strings.ReplaceAll(s, "'", "\\'")
+	s = strings.ReplaceAll(s, "\"", "\\\"")
+	return strings.ReplaceAll(s, ";", "\\;")
+}
+
+// Parse a map of strings.
+// If one of the values equals to "(map)", return a Groovy-formatted
+// named map: "key: [key1: "value1", key2: "value2", ...]".
+// Otherwise return a comma-separated list of key-value pairs
+func stringsOrMap(x map[string]string) string {
+	key := ""
+	out := ""
+	for k, v := range x {
+		if v == "(map)" {
+			key = k
+		} else {
+			out = out + fmt.Sprintf("%s: '%s', ", escape(k), escape(v))
+		}
+	}
+	if key != "" {
+		out = fmt.Sprintf("%s: [%s], ", escape(key), out)
+	}
+	return out
 }

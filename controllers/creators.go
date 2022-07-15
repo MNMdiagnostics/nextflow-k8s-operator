@@ -19,7 +19,6 @@ package controllers
 import (
 	"bytes"
 	"errors"
-	"strconv"
 	"text/template"
 
 	corev1 "k8s.io/api/core/v1"
@@ -88,11 +87,17 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 				},
 			},
 			RestartPolicy: corev1.RestartPolicyNever,
+			Tolerations:   spec.Driver.Tolerations,
 		},
 	}
 
+	// add environment variables for the driver pod, if there are any
+	if len(spec.Driver.Env) > 0 {
+		pod.Spec.Containers[0].Env = spec.Driver.Env
+	}
+
 	// optionally attach a secret volume with scm data in it
-	if nfLaunch.Spec.Nextflow.ScmSecretName != "" {
+	if spec.Nextflow.ScmSecretName != "" {
 		pod.Spec.Containers[0].VolumeMounts = append(
 			pod.Spec.Containers[0].VolumeMounts,
 			corev1.VolumeMount{
@@ -120,34 +125,45 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 // Construct a Nextflow config file as a ConfigMap
 func makeNextflowConfig(nfLaunch batchv1alpha1.NextflowLaunch) corev1.ConfigMap {
 
-	configTemplate, _ := template.New("config").Parse(`
-        process {
-           executor = 'k8s'
-           pod = [
-           {{- range $opt := .Pod -}}
-           [
-           {{- range $key, $value := $opt -}}
-           {{ js $key }}: '{{ js $value }}',
-           {{- end -}}
-           ],
-           {{- end -}}
-           ]
-        }
-        k8s {
-           {{- range $par, $value := .K8s }}
-           {{ $par }} = '{{ js $value }}'
-           {{- end }}
-        }
-        params {
-           {{- range $par, $value := .Params }}
-           {{ $par }} = '{{ js $value }}'
-           {{- end }}
-        }
-        env {
-           {{- range $par, $value := .Env }}
-           {{ $par }} = '{{ js $value }}'
-           {{- end }}
-        }`)
+	configTemplate, _ := template.New("config").
+		Funcs(template.FuncMap{
+			"stringsOrMap": stringsOrMap,
+			"escape":       escape,
+		}).
+		Parse(`
+    		process {
+    		   executor = 'k8s'
+    		   {{ if .Pod -}}
+    		   pod = [
+    		   {{ range $opt := .Pod -}}
+    		   [
+    		   {{- stringsOrMap $opt -}}
+    		   ],
+    		   {{ end }}
+    		   ]
+    		   {{- end }}
+    		}
+    		{{ if .K8s -}}
+    		k8s {
+    		   {{- range $par, $value := .K8s }}
+    		   {{ escape $par }} = '{{ escape $value }}'
+    		   {{- end }}
+    		}
+    		{{- end }}
+    		{{ if .Params -}}
+    		params {
+    		   {{- range $par, $value := .Params }}
+    		   {{ escape $par }} = '{{ escape $value }}'
+    		   {{- end }}
+    		}
+    		{{- end }}
+    		{{ if .Env -}}
+    		env {
+    		   {{- range $par, $value := .Env }}
+    		   {{ escape $par }} = '{{ escape $value }}'
+    		   {{- end }}
+    		}
+    		{{- end }}`)
 
 	type Options struct {
 		K8s    map[string]string
@@ -181,8 +197,8 @@ func validateLaunch(nfLaunch batchv1alpha1.NextflowLaunch) (batchv1alpha1.Nextfl
 	spec := nfLaunch.Spec
 
 	// validation
-	if spec.Pipeline == "" {
-		return nfLaunch, errors.New("spec.Pipeline is required")
+	if spec.Pipeline.Source == "" {
+		return nfLaunch, errors.New("spec.pipeline.source is required")
 	}
 	if keyIsEmpty(spec.K8s, "storageClaimName") {
 		return nfLaunch, errors.New("spec.k8s.storageClaimName is required")
@@ -205,16 +221,26 @@ func validateLaunch(nfLaunch batchv1alpha1.NextflowLaunch) (batchv1alpha1.Nextfl
 		spec.Nextflow.Version = defaultNextflowVersion
 	}
 	profileArg := ""
+	profileName := ""
 	if spec.Profile != "" {
-		profileArg = "-profile " + strconv.QuoteToASCII(spec.Profile)
+		profileArg = "-profile "
+		profileName = escape(spec.Profile)
 	}
+	revisionArg := ""
+	revisionName := ""
+	if spec.Pipeline.Revision != "" {
+		revisionArg = "-r "
+		revisionName = escape(spec.Pipeline.Revision)
+	}
+
 	if len(spec.Nextflow.Command) == 0 {
 		spec.Nextflow.Command = []string{
 			"nextflow", "run",
 			"-c", configPath,
-			"-w", strconv.QuoteToASCII(spec.K8s["workDir"]),
-			profileArg,
-			strconv.QuoteToASCII(spec.Pipeline),
+			"-w", escape(spec.K8s["workDir"]),
+			profileArg, profileName,
+			revisionArg, revisionName,
+			escape(spec.Pipeline.Source),
 		}
 	}
 	nfLaunch.Spec = spec

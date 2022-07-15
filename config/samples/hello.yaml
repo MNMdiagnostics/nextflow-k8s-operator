@@ -1,0 +1,37 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: hello-pv
+spec:
+  storageClassName: manual
+  capacity:
+    storage: "20Mi"
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/nextflow"
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: hello-pvc
+spec:
+  volumeName: hello-pv
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: "20Mi"
+
+---
+apiVersion: batch.mnm.bio/v1alpha1
+kind: NextflowLaunch
+metadata:
+  name: hello
+spec:
+  pipeline:
+    source: hello
+  k8s:
+    storageClaimName: hello-pvc
