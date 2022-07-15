@@ -221,12 +221,16 @@ func validateLaunch(nfLaunch batchv1alpha1.NextflowLaunch) (batchv1alpha1.Nextfl
 		spec.Nextflow.Version = defaultNextflowVersion
 	}
 	profileArg := ""
+	profileName := ""
 	if spec.Profile != "" {
-		profileArg = "-profile " + escape(spec.Profile)
+		profileArg = "-profile "
+		profileName = escape(spec.Profile)
 	}
 	revisionArg := ""
+	revisionName := ""
 	if spec.Pipeline.Revision != "" {
-		revisionArg = "-r " + escape(spec.Pipeline.Revision)
+		revisionArg = "-r "
+		revisionName = escape(spec.Pipeline.Revision)
 	}
 
 	if len(spec.Nextflow.Command) == 0 {
@@ -234,8 +238,8 @@ func validateLaunch(nfLaunch batchv1alpha1.NextflowLaunch) (batchv1alpha1.Nextfl
 			"nextflow", "run",
 			"-c", configPath,
 			"-w", escape(spec.K8s["workDir"]),
-			profileArg,
-			revisionArg,
+			profileArg, profileName,
+			revisionArg, revisionName,
 			escape(spec.Pipeline.Source),
 		}
 	}
