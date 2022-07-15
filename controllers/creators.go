@@ -223,13 +223,13 @@ func validateLaunch(nfLaunch batchv1alpha1.NextflowLaunch) (batchv1alpha1.Nextfl
 	profileArg := ""
 	profileName := ""
 	if spec.Profile != "" {
-		profileArg = "-profile "
+		profileArg = "-profile"
 		profileName = escape(spec.Profile)
 	}
 	revisionArg := ""
 	revisionName := ""
 	if spec.Pipeline.Revision != "" {
-		revisionArg = "-r "
+		revisionArg = "-r"
 		revisionName = escape(spec.Pipeline.Revision)
 	}
 
