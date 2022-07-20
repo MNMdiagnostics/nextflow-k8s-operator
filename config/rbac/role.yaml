@@ -7,8 +7,21 @@ metadata:
 rules:
 - apiGroups:
   - ""
+  - apps
+  - autoscaling
+  - batch
+  - extensions
+  - policy
+  - rbac.authorization.k8s.io
   resources:
   - pods
+  - pods/status
+  - pods/log
+  - deployments
+  - services
+  - persistentvolumes
+  - persistentvolumeclaims
+  - configmaps
   verbs:
   - create
   - delete
@@ -17,12 +30,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/status
-  verbs:
-  - get
 - apiGroups:
   - batch.mnm.bio
   resources:
