@@ -224,7 +224,7 @@ Let's move on to read about the configuration options that NeKO provides.
 ### `k8s`, `params` and `env`
 
 These sections (defined within `spec` in the yaml file; see above) are
-equivalents of the respective Nextflow sections. A short example is shown
+equivalents of the respective Nextflow scopes. A short example is shown
 below:
 
 ``` yaml
@@ -239,7 +239,7 @@ spec:
     SHELL: zsh
 ```
 
-#### `k8s`
+#### k8s
 
 Here, a PVC called `my-pvc` will be mounted at `/my-workspace`.
 
@@ -254,7 +254,7 @@ This is similar to Nextflow defaults.
 For all available configuration options, see
 [https://www.nextflow.io/docs/edge/config.html#scope-k8s].
 
-#### `params`
+#### params
 
 In the example, two pipeline parameters are defined: `manifest` and
 `outputDir`.
@@ -262,7 +262,7 @@ In the example, two pipeline parameters are defined: `manifest` and
 For reference, see
 [https://www.nextflow.io/docs/edge/config.html#scope-params]
 
-#### `env`
+#### env
 
 Like above, it is possible to set environment variables (`SHELL` in the
 example) in the _worker_ pods (for setting variables in the driver pod,
