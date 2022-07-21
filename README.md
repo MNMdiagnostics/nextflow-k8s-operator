@@ -153,8 +153,8 @@ subjects:
 To start an already prepared Nextflow launch, run: `kubectl apply -f
 my-launch.yaml`, where `my-launch.yaml` is the name of your definition file.
 
-As an example, see [config/samples/hello.yaml]; the file contains the
-definition of a simple launch (see: _The essentials_ in _Configuring your
+As an example, see [hello.yaml](config/samples/hello.yaml); the file contains
+the definition of a simple launch (see: _The essentials_ in _Configuring your
 pipelines_ for explanation) as well as definitions of a
 [PV-PVC](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
 pair.
@@ -252,7 +252,7 @@ NOTE: unless defined explicitly, the vital directories are set as follows:
 This is similar to Nextflow defaults.
 
 For all available configuration options, see
-[https://www.nextflow.io/docs/edge/config.html#scope-k8s].
+https://www.nextflow.io/docs/edge/config.html#scope-k8s .
 
 #### params
 
@@ -260,7 +260,7 @@ In the example, two pipeline parameters are defined: `manifest` and
 `outputDir`.
 
 For reference, see
-[https://www.nextflow.io/docs/edge/config.html#scope-params]
+https://www.nextflow.io/docs/edge/config.html#scope-params .
 
 #### env
 
@@ -269,7 +269,7 @@ example) in the _worker_ pods (for setting variables in the driver pod,
 see: _Configuring the driver_).
 
 For reference, see
-[https://www.nextflow.io/docs/edge/config.html#scope-env]
+https://www.nextflow.io/docs/edge/config.html#scope-env .
 
 ### Pod options
 
@@ -278,7 +278,7 @@ settings are available, including more sophisticated ways of setting
 environment variables (from secrets, config maps, etc.).
 
 For a full list, see
-[https://www.nextflow.io/docs/edge/process.html#process-pod]
+https://www.nextflow.io/docs/edge/process.html#process-pod .
 
 Most of these options can be defined as simple key-value maps, for example:
 
@@ -324,8 +324,8 @@ pod = [
 ### Customizing Nextflow
 
 By default, a predefined version of Nextflow is used as a driver for the
-launches (it can be changed in the [controlllers/creators.go] file, but
-the code has to be recompiled and re-run afterwards).
+launches (it can be changed in the [creators.go](controlllers/creators.go)
+file, but the code has to be recompiled and re-run afterwards).
 
 To enable more flexibility in the selection of the runtime environment,
 the `nextflow` section provides options for customizing the Nextflow
@@ -347,7 +347,7 @@ declarations in Kubernetes pod definitions for reference.)
 `nextflow.scmSecretName`: this important setting allows for downloading
 pipelines from private (or otherwise restricted) repositories. It points to
 a Kubernetes secret holding the contents of Nextflow SCM configuration file
-(see [https://www.nextflow.io/docs/latest/sharing.html#scm-configuration-file]).
+(see https://www.nextflow.io/docs/latest/sharing.html#scm-configuration-file ).
 To create the secret, use `make_scm_secret.sh | kubectl apply -f -`.
 
 ### Configuring the driver
