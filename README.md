@@ -324,7 +324,7 @@ pod = [
 ### Customizing Nextflow
 
 By default, a predefined version of Nextflow is used as a driver for the
-launches (it can be changed in the [creators.go](controlllers/creators.go)
+launches (it can be changed in the [creators.go](controllers/creators.go)
 file, but the code has to be recompiled and re-run afterwards).
 
 To enable more flexibility in the selection of the runtime environment,
