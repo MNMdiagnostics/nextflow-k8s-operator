@@ -232,6 +232,7 @@ func validateLaunch(nfLaunch batchv1alpha1.NextflowLaunch) (batchv1alpha1.Nextfl
 	if len(spec.Nextflow.Command) == 0 {
 		spec.Nextflow.Command = []string{
 			"nextflow", "run",
+			"-process.executor", "k8s",
 			"-c", configPath,
 			"-w", escape(spec.K8s["workDir"]),
 			profileArg, profileName,
