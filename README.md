@@ -365,6 +365,25 @@ includes using secrets and config maps as sources for the variables).
 `driver.tolerations`: driver pod tolerations. Defined exactly like in a pod
 definition.
 
+An example of the same toleration set both for the driver and the workers is
+shown below.
+
+``` yaml
+spec:
+  pod:
+  - toleration: (map)
+    key: core
+    operator: Equal
+    value: "true"
+    effect: NoSchedule
+  driver:
+    tolerations:
+    - key: core
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+```
+
 ## Acknowledgements
 
 `nextflow-k8s-operator` has been created with [Kubebuilder](https://kubebuilder.io/).
