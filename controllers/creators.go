@@ -54,6 +54,7 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 				Image:   spec.Nextflow.Image + ":" + spec.Nextflow.Version,
 				Command: spec.Nextflow.Command,
 				Name:    nfLaunch.Name + "-" + generateHash(8),
+				Env:     spec.Driver.Env,
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "nextflow-config",
@@ -89,11 +90,6 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 			RestartPolicy: corev1.RestartPolicyNever,
 			Tolerations:   spec.Driver.Tolerations,
 		},
-	}
-
-	// add environment variables for the driver pod, if there are any
-	if len(spec.Driver.Env) > 0 {
-		pod.Spec.Containers[0].Env = spec.Driver.Env
 	}
 
 	// optionally attach a secret volume with scm data in it
@@ -236,6 +232,7 @@ func validateLaunch(nfLaunch batchv1alpha1.NextflowLaunch) (batchv1alpha1.Nextfl
 	if len(spec.Nextflow.Command) == 0 {
 		spec.Nextflow.Command = []string{
 			"nextflow", "run",
+			"-process.executor", "k8s",
 			"-c", configPath,
 			"-w", escape(spec.K8s["workDir"]),
 			profileArg, profileName,
