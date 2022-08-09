@@ -5,7 +5,7 @@
 environment, manage and monitor them by means of the Kubernetes client
 (`kubectl`).
 
-*[gif]*
+[![asciicast](https://asciinema.org/a/xooVKZy94kDEcNHKujD9vKoOJ.png)](https://asciinema.org/a/xooVKZy94kDEcNHKujD9vKoOJ)
 
 NeKO takes the burden of orchestrating your pipelines off your shoulders.  
 You can focus on doing science.
