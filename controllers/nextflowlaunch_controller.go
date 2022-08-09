@@ -42,6 +42,7 @@ type NextflowLaunchReconciler struct {
 //+kubebuilder:rbac:groups=batch.mnm.bio,resources=nextflowlaunches/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=pods/status,verbs=get
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
 // Reconciler function for NextflowLaunch
 func (r *NextflowLaunchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
