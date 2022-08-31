@@ -26,6 +26,9 @@ type NextflowLaunchNextflow struct {
 	Image         string   `json:"image,omitempty"`
 	Version       string   `json:"version,omitempty"`
 	Command       []string `json:"command,omitempty"`
+	Args          []string `json:"args,omitempty"`
+	Home          string   `json:"home,omitempty"`
+	LogPath       string   `json:"logPath,omitempty"`
 	ScmSecretName string   `json:"scmSecretName,omitempty"`
 }
 
