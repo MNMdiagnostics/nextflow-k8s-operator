@@ -127,8 +127,6 @@ rules:
   - pods
   - pods/status
   - pods/log
-  - deployments
-  - services
   - persistentvolumes
   - persistentvolumeclaims
   - configmaps
@@ -343,6 +341,18 @@ By default, `nextflow run` is exectued with some command-line parameters.
 This is a good place to add custom invokations to the Nextflow command,
 or execute some other script pre-launch. (NOTE: see examples of command
 declarations in Kubernetes pod definitions for reference.)
+
+`nextflow.args`: if you want to keep the default command line and only add
+some arguments to it (for example, `-resume`), it's better to specify them
+in this section (in the same way you'd specify the command declaration in
+`nextflow.command`). Your arguments will be appended to the original command.
+
+`nextflow.home`: this changes the path to Nextflow's home directory.
+Point it to a persistent volume if you want to keep the Nextflow environment
+between launches.
+
+`nextflow.logPath`: custom path for the log file. (NOTE: it should include
+the filename as well.)
 
 `nextflow.scmSecretName`: this important setting allows for downloading
 pipelines from private (or otherwise restricted) repositories. It points to

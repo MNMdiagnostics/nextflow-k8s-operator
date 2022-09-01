@@ -31,6 +31,7 @@ const (
 	defaultMountPath       = "/workspace"
 	defaultNextflowImage   = "nextflow/nextflow"
 	defaultNextflowVersion = "22.06.0-edge"
+	defaultNextflowHome    = "/.nextflow"
 	configPath             = "/tmp/nextflow.config"
 
 	statusRunning   = "Running"
@@ -53,6 +54,7 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 			Containers: []corev1.Container{{
 				Image:   spec.Nextflow.Image + ":" + spec.Nextflow.Version,
 				Command: spec.Nextflow.Command,
+				Args:    spec.Nextflow.Args,
 				Name:    nfLaunch.Name + "-" + generateHash(8),
 				Env:     spec.Driver.Env,
 				VolumeMounts: []corev1.VolumeMount{
@@ -98,7 +100,7 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 			pod.Spec.Containers[0].VolumeMounts,
 			corev1.VolumeMount{
 				Name:      "nextflow-scm",
-				MountPath: "/.nextflow/scm",
+				MountPath: spec.Nextflow.Home + "/scm",
 				SubPath:   "scm",
 			},
 		)
@@ -228,10 +230,17 @@ func validateLaunch(nfLaunch batchv1alpha1.NextflowLaunch) (batchv1alpha1.Nextfl
 		revisionArg = "-r"
 		revisionName = escape(spec.Pipeline.Revision)
 	}
-
+	logArg := ""
+	logName := ""
+	if spec.Nextflow.LogPath != "" {
+		logArg = "-log"
+		logName = escape(spec.Nextflow.LogPath)
+	}
 	if len(spec.Nextflow.Command) == 0 {
 		spec.Nextflow.Command = []string{
-			"nextflow", "run",
+			"nextflow",
+			logArg, logName,
+			"run",
 			"-process.executor", "k8s",
 			"-c", configPath,
 			"-w", escape(spec.K8s["workDir"]),
@@ -239,6 +248,14 @@ func validateLaunch(nfLaunch batchv1alpha1.NextflowLaunch) (batchv1alpha1.Nextfl
 			revisionArg, revisionName,
 			escape(spec.Pipeline.Source),
 		}
+	}
+	if spec.Nextflow.Home == "" {
+		spec.Nextflow.Home = defaultNextflowHome
+	} else {
+		spec.Driver.Env = append(spec.Driver.Env, corev1.EnvVar{
+			Name:  "NXF_HOME",
+			Value: spec.Nextflow.Home,
+		})
 	}
 	nfLaunch.Spec = spec
 	return nfLaunch, nil

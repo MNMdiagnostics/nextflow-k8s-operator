@@ -199,11 +199,19 @@ spec:
               nextflow:
                 description: Nextflow-specific configuration
                 properties:
+                  args:
+                    items:
+                      type: string
+                    type: array
                   command:
                     items:
                       type: string
                     type: array
+                  home:
+                    type: string
                   image:
+                    type: string
+                  logPath:
                     type: string
                   scmSecretName:
                     type: string
