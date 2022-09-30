@@ -1,3 +1,4 @@
+![NeKO](./docs/neko_logo.png)
 # nextflow-k8s-operator
 
 `nextflow-k8s-operator` (NeKO) is a tool that allows you to run your
