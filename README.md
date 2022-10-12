@@ -56,6 +56,11 @@ used by NeKO:
 make install
 ```
 
+You will need `go` installed, e.g.
+```sh
+sudo apt install golang-go
+```
+
 ### As a pod
 
 Build the Docker image:
@@ -97,7 +102,9 @@ Following a successful build, run the controller:
 bin/manager
 ```
 
-The controller's execution log will be visible in the terminal.
+The controller's execution log will be visible in the terminal. 
+
+If you experience connection problems after fresh installation of kubernetes and NeKO, rebooting the machine may help.
 
 ### Service accounts
 
@@ -156,7 +163,11 @@ As an example, see [hello.yaml](config/samples/hello.yaml); the file contains
 the definition of a simple launch (see: _The essentials_ in _Configuring your
 pipelines_ for explanation) as well as definitions of a
 [PV-PVC](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
-pair.
+pair. The example pipeline is launched with:
+
+```
+kubectl apply -f config/samples/hello.yaml
+```
 
 If your pipeline has finished with success, you will see the results yielded by
 the pipeline by viewing the logs from the driver pod (if the name of your launch
