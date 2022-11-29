@@ -1,0 +1,18 @@
+{{- if .Values.service.create -}}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: {{.Values.controlPlane.labelName}}
+  name: {{.Release.Namespace}}-{{.Values.service.name}}
+  namespace: {{.Release.Namespace}}
+spec:
+  ports:
+  - name: {{.Values.service.portName}}
+    port: {{.Values.service.port}}
+    protocol: TCP
+    targetPort: {{.Values.service.targetPort}}
+  selector:
+    control-plane: {{.Values.controlPlane.labelName}}
+
+{{- end }}

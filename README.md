@@ -43,7 +43,7 @@ of worker pods, doing the actual work.
 one or more workers are launched from within the driver.
 
 ## Installation
-
+### Makefile
 The controller can be running either as a pod on the Kubernetes cluster, or
 as a standalone program running on the local machine (NOTE: although connection
 with Kubernetes is required, the controller can be run on any machine, including
@@ -86,6 +86,21 @@ To uninstall NeKO, run:
 
 ``` sh
 make undeploy uninstall
+```
+
+
+### Helm
+
+Simple helm installation for nextflow-k8s-operator
+
+  To add the `nextflow-k8s-operator` helm repo, run:
+```
+helm repo add nextflow-k8s-operator https://github.com/MNMdiagnostics/nextflow-k8s-operator
+```
+
+To install a release named `nextflow-k8s-operator`, run:
+```
+helm install nextflow-k8s-operator nextflow-k8s-operator/nextflow-k8s-operator --set deployment.manager.image.repository=<image repository> --set deployment.manager.image.tag=<image tag>
 ```
 
 ### As a standalone program

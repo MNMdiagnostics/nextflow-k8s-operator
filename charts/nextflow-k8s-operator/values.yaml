@@ -1,0 +1,78 @@
+
+controllerManager:
+  healthProbeBindAddress: 8081
+  metricsBindAddress: 127.0.0.1:8080
+  webhookPort: 9443
+  leaderElection:
+    elect: true
+    resourceName: 7c3b71ae.mnm.bio
+
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "operator-controller-manager"
+
+
+controlPlane:
+  labelName: controller-manager
+
+
+rbac:
+  create: true
+
+service:
+  create: true
+  name: controller-manager-metrics-service
+  portName: https
+  port: 8443
+  targetPort: https
+
+deployment:
+  labels: {}
+  replicas: 1
+  proxy:
+    image:
+      repository: gcr.io/kubebuilder/kube-rbac-proxy
+      tag: v0.11.0
+      imagePullPolicy: IfNotPresent
+    name: kube-rbac-proxy
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 5m
+        memory: 64Mi
+
+  manager:
+    image:
+      repository: ""
+      tag: ""
+      imagePullPolicy: IfNotPresent
+    name: manager
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 64Mi
+
+probe:
+  livenessProbe:
+    path: /healthz
+    initialDelaySeconds: 15
+    periodSeconds: 20
+
+  readinessProbe:
+    path: /readyz
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: {{.Values.controlPlane.labelName}}
+    {{- with .Values.deployment.labels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  name: {{.Release.Namespace}}-controller-manager
+  namespace: {{.Release.Namespace}}
+spec:
+  replicas: {{.Values.deployment.manager.replicas}}
+  selector:
+    matchLabels:
+      control-plane: {{.Values.controlPlane.labelName}}
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: {{.Values.controlPlane.labelName}}
+    spec:
+      containers:
+      - args:
+        - --secure-listen-address=0.0.0.0:{{ .Values.service.port }}
+        - --upstream=http://{{.Values.controllerManager.metricsBindAddress}}/
+        - --logtostderr=true
+        - --v=0
+        image: {{.Values.deployment.proxy.image.repository}}:{{.Values.deployment.proxy.image.tag}}
+        name: {{.Values.deployment.proxy.name}}
+        imagePullPolicy: {{.Values.deployment.proxy.image.imagePullPolicy}}
+        ports:
+        - containerPort: {{ .Values.service.port }}
+          name: {{ .Values.service.portName }}
+          protocol: TCP
+        resources:
+            {{- toYaml .Values.deployment.proxy.resources | nindent 12 }}
+      - args:
+        - --health-probe-bind-address=:{{.Values.controllerManager.healthProbeBindAddress}}
+        - --metrics-bind-address={{.Values.controllerManager.metricsBindAddress}}
+        - --leader-elect
+        command:
+        - /manager
+        image: {{.Values.deployment.manager.image.repository}}:{{.Values.deployment.manager.image.tag}}
+        imagePullPolicy: {{.Values.deployment.manager.image.imagePullPolicy}}
+        name: {{.Values.deployment.manager.name}}
+        livenessProbe:
+          httpGet:
+            path: {{.Values.probe.livenessProbe.path}}
+            port: {{.Values.controllerManager.healthProbeBindAddress}}
+          initialDelaySeconds: {{.Values.probe.livenessProbe.initialDelaySeconds}}
+          periodSeconds: {{.Values.probe.livenessProbe.periodSeconds}}
+        readinessProbe:
+          httpGet:
+            path: {{.Values.probe.readinessProbe.path}}
+            port: {{.Values.controllerManager.healthProbeBindAddress}}
+          initialDelaySeconds: {{.Values.probe.readinessProbe.initialDelaySeconds}}
+          periodSeconds: {{.Values.probe.readinessProbe.periodSeconds}}
+        resources:
+            {{- toYaml .Values.deployment.manager.resources | nindent 12 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: {{ include "operator.serviceAccountName" . }}
+      terminationGracePeriodSeconds: 10
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+

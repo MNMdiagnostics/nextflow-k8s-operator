@@ -1,0 +1,18 @@
+apiVersion: v1
+data:
+  controller_manager_config.yaml: |
+    apiVersion: controller-runtime.sigs.k8s.io/v1alpha1
+    kind: ControllerManagerConfig
+    health:
+      healthProbeBindAddress: :{{.Values.controllerManager.healthProbeBindAddress}}
+    metrics:
+      bindAddress: {{.Values.controllerManager.metricsBindAddress}}
+    webhook:
+      port: {{.Values.controllerManager.webhookPort}}
+    leaderElection:
+      leaderElect: {{.Values.controllerManager.leaderElection.elect}}
+      resourceName: {{.Values.controllerManager.leaderElection.resourceName}}
+kind: ConfigMap
+metadata:
+  name: {{.Release.Namespace}}-manager-config
+  namespace: {{.Release.Namespace}}
