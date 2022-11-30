@@ -95,12 +95,12 @@ Simple helm installation for nextflow-k8s-operator
 
   To add the `nextflow-k8s-operator` helm repo, run:
 ```
-helm repo add nextflow-k8s-operator https://github.com/MNMdiagnostics/nextflow-k8s-operator
+helm repo add nextflow-k8s-operator https://nextflow-k8s-operator-helm.s3.eu-north-1.amazonaws.com
 ```
 
 To install a release named `nextflow-k8s-operator`, run:
 ```
-helm install nextflow-k8s-operator nextflow-k8s-operator/nextflow-k8s-operator --set deployment.manager.image.repository=<image repository> --set deployment.manager.image.tag=<image tag>
+helm install nextflow-k8s-operator nextflow-k8s-operator/nextflow-k8s-operator
 ```
 
 ### As a standalone program
