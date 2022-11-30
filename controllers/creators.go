@@ -49,14 +49,16 @@ func makeNextflowPod(nfLaunch batchv1alpha1.NextflowLaunch, configMapName string
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nfLaunch.Name + "-" + generateHash(8),
 			Namespace: nfLaunch.Namespace,
+			Labels:    spec.Driver.Labels,
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{{
-				Image:   spec.Nextflow.Image + ":" + spec.Nextflow.Version,
-				Command: spec.Nextflow.Command,
-				Args:    spec.Nextflow.Args,
-				Name:    nfLaunch.Name + "-" + generateHash(8),
-				Env:     spec.Driver.Env,
+				Image:     spec.Nextflow.Image + ":" + spec.Nextflow.Version,
+				Command:   spec.Nextflow.Command,
+				Args:      spec.Nextflow.Args,
+				Name:      nfLaunch.Name + "-" + generateHash(8),
+				Env:       spec.Driver.Env,
+				Resources: spec.Driver.Resources,
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "nextflow-config",

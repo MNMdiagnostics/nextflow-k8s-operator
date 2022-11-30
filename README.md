@@ -421,6 +421,24 @@ spec:
       effect: NoSchedule
 ```
 
+`driver.labels`: labels used for the driver pod. Defined like in the `metadata`
+section of a pod definition.
+
+`driver.resources`: computational resources required for the driver pod. For
+example:
+
+``` yaml
+spec:
+  driver:
+    resources:
+      requests:
+        memory: "16Gi"
+        cpu: "4"
+      limits:
+        memory: "32Gi"
+        cpu: "8"
+```
+
 ## Acknowledgements
 
 `nextflow-k8s-operator` has been created with [Kubebuilder](https://kubebuilder.io/).
