@@ -1,0 +1,15 @@
+apiVersion: v1
+entries:
+  nextflow-k8s-operator:
+  - apiVersion: v2
+    appVersion: 1.1.0
+    created: "2022-11-30T13:33:42.977967+01:00"
+    description: A Helm chart for Kubernetes contains nextflow-operator
+    digest: feb214e105527b58b4794277f3f96ac60dc20b5a9138f45c9131a38de11b5f76
+    icon: https://raw.githubusercontent.com/MNMdiagnostics/nextflow-k8s-operator/master/docs/neko_logo.png
+    name: nextflow-k8s-operator
+    type: application
+    urls:
+    - https://github.com/MNMdiagnostics/nextflow-k8s-operator/tree/master/helm/helm/nextflow-k8s-operator-1.1.0.tgz
+    version: 1.1.0
+generated: "2022-11-30T13:33:42.976546+01:00"
