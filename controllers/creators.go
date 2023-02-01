@@ -37,6 +37,7 @@ const (
 	statusRunning   = "Running"
 	statusSucceeded = "Succeeded"
 	statusFailed    = "Failed"
+	statusRelaunch  = "Relaunch"
 )
 
 // Construct a Pod object for Nextflow

@@ -63,6 +63,7 @@ type NextflowLaunchStatus struct {
 	Stage     string                  `json:"stage,omitempty"`
 	MainPod   *corev1.ObjectReference `json:"mainpod,omitempty"`
 	ConfigMap *corev1.ObjectReference `json:"configmap,omitempty"`
+	Launched  bool                    `json:"launched,omitempty"`
 }
 
 //+kubebuilder:object:root=true

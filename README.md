@@ -201,6 +201,18 @@ Either way, if you don't need the launch anymore on your cluster, remove it
 with `kubectl delete -f hello.yaml`. (NOTE: if the pipeline has saved any
 artifacts to the persistent volume, they will be safe!)
 
+### Restarting the launch
+
+It may happen that your job fails (for example, due to misconfiguration or
+an I/O problem). Or, in a cloud setting, your driver pod may "disappear" when
+a node is shut down. In these cases, it is possible to relaunch the computations
+(in the latter case the relaunch will be done automatically), but if you don't
+want to lose the work so far, you should make sure that the following settings
+are in your YAML file (see the next section for the details):
+- `"-resume"` must be in `nextflow.args`,
+- Nextflow home (`NXF_HOME` environment variable) must be in a persistent
+  location (e.g., on the PVC).
+
 ## Configuring your pipelines
 
 As has been mentioned, both the configuration of the computational pipeline
