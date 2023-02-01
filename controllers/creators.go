@@ -130,6 +130,7 @@ func makeNextflowConfig(nfLaunch batchv1alpha1.NextflowLaunch) corev1.ConfigMap 
 		Funcs(template.FuncMap{
 			"stringsOrMap": stringsOrMap,
 			"escape":       escape,
+			"groovyValue":  groovyValue,
 		}).
 		Parse(`
     		process {
@@ -147,14 +148,14 @@ func makeNextflowConfig(nfLaunch batchv1alpha1.NextflowLaunch) corev1.ConfigMap 
     		{{ if .K8s -}}
     		k8s {
     		   {{- range $par, $value := .K8s }}
-    		   {{ escape $par }} = '{{ escape $value }}'
+    		   {{ escape $par }} = {{ groovyValue $value }}
     		   {{- end }}
     		}
     		{{- end }}
     		{{ if .Params -}}
     		params {
     		   {{- range $par, $value := .Params }}
-    		   {{ escape $par }} = '{{ escape $value }}'
+    		   {{ escape $par }} = {{ groovyValue $value }}
     		   {{- end }}
     		}
     		{{- end }}
