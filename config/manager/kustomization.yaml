@@ -13,4 +13,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: 683839581998.dkr.ecr.eu-north-1.amazonaws.com/nextflow-k8s-operator
-  newTag: "1.1.0"
+  newTag: 1.2.0

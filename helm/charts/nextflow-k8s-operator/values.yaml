@@ -48,7 +48,7 @@ deployment:
   manager:
     image:
       repository: "683839581998.dkr.ecr.eu-north-1.amazonaws.com/nextflow-k8s-operator"
-      tag: "1.1.0"
+      tag: "1.2.0"
       imagePullPolicy: IfNotPresent
     name: manager
     resources:

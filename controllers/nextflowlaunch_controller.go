@@ -77,11 +77,26 @@ func (r *NextflowLaunchReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 		err = r.Get(ctx, podName, &pod)
 		if err != nil {
-			log.Error(err, "Error fetching pod")
-			return ctrl.Result{}, err
+			if nfLaunch.Status.Launched {
+				// driver pod has been killed, recreate session
+				nfLaunch.Status.Stage = statusRelaunch
+				nfLaunch.Status.Launched = false
+				r.Status().Update(ctx, &nfLaunch)
+				log.Info("Driver pod disappeared. Relaunching...")
+				return ctrl.Result{RequeueAfter: 5e+9}, nil
+			} else {
+				log.Error(err, "Error fetching driver pod")
+				return ctrl.Result{}, err
+			}
 		}
 		status := pod.Status.Phase
 		log.Info("Job running (" + string(status) + ")")
+
+		// pod running? mark as successful launch
+		if (!nfLaunch.Status.Launched) && (status == corev1.PodRunning) {
+			nfLaunch.Status.Launched = true
+			r.Status().Update(ctx, &nfLaunch)
+		}
 
 		if status == corev1.PodSucceeded {
 			nfLaunch.Status.Stage = statusSucceeded

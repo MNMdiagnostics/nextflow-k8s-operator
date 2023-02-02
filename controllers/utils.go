@@ -48,6 +48,16 @@ func escape(s string) string {
 	return strings.ReplaceAll(s, ";", "\\;")
 }
 
+// Safely parse a string as a Groovy value
+// (If it's a boolean true/false value, it won't be quoted)
+func groovyValue(s string) string {
+	if s == "true" || s == "false" {
+		return s
+	} else {
+		return "'" + escape(s) + "'"
+	}
+}
+
 // Parse a map of strings.
 // If one of the values equals to "(map)", return a Groovy-formatted
 // named map: "key: [key1: "value1", key2: "value2", ...]".
